@@ -1,0 +1,198 @@
+Resources:
+  sslSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupName: {"Ref" : "AWSEBSecurityGroup"}
+      IpProtocol: tcp
+      ToPort: 443
+      FromPort: 443
+      CidrIp: 0.0.0.0/0
+
+packages:
+  yum:
+    mod_ssl : []
+
+files:
+  /tmp/ssl.conf:
+    mode: "000755"
+    owner: root
+    group: root
+    content: |
+      LoadModule ssl_module modules/mod_ssl.so
+      Listen 443
+      <VirtualHost *:443>
+        <Proxy *>
+          Order deny,allow
+          Allow from all
+        </Proxy>
+
+        SSLEngine             on
+        SSLCertificateFile    "/etc/pki/tls/certs/server.crt"
+        SSLCertificateKeyFile "/etc/pki/tls/certs/server.key"
+        SSLCertificateChainFile "/etc/pki/tls/certs/gd_bundle.crt"
+        SSLProtocol           all -SSLv3
+        SSLCipherSuite        ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:AES128-GCM-SHA256:AES128-SHA256:AES128-SHA:AES256-GCM-SHA384:AES256-SHA256:AES256-SHA
+        SSLHonorCipherOrder   on
+        SSLCompression        off
+        SSLSessionTickets     off
+
+        Header always set Strict-Transport-Security "max-age=31536000; includeSubdomains; preload"
+        Header always set X-Frame-Options DENY
+        Header always set X-Content-Type-Options nosniff
+
+        ProxyVia on
+        ProxyPass / http://localhost:8080/ retry=0
+        ProxyPassReverse / http://localhost:8080/
+        ProxyPreserveHost on
+
+      </VirtualHost>
+
+  /etc/pki/tls/certs/server.crt:
+    mode: "000400"
+    owner: root
+    group: root
+    content: |
+    content: |
+      -----BEGIN CERTIFICATE-----
+      MIIFJzCCBA+gAwIBAgIIHSCu2aorEEswDQYJKoZIhvcNAQELBQAwgbQxCzAJBgNV
+      BAYTAlVTMRAwDgYDVQQIEwdBcml6b25hMRMwEQYDVQQHEwpTY290dHNkYWxlMRow
+      GAYDVQQKExFHb0RhZGR5LmNvbSwgSW5jLjEtMCsGA1UECxMkaHR0cDovL2NlcnRz
+      LmdvZGFkZHkuY29tL3JlcG9zaXRvcnkvMTMwMQYDVQQDEypHbyBEYWRkeSBTZWN1
+      cmUgQ2VydGlmaWNhdGUgQXV0aG9yaXR5IC0gRzIwHhcNMTUwNTE0MDEwNTM4WhcN
+      MTgwNTE0MjI1NzAyWjA9MSEwHwYDVQQLExhEb21haW4gQ29udHJvbCBWYWxpZGF0
+      ZWQxGDAWBgNVBAMMDyouYmx1ZXlpZWxkLmNvbTCCASIwDQYJKoZIhvcNAQEBBQAD
+      ggEPADCCAQoCggEBAMRwy/ukZRtxF4f0bBQxu9tEYK9+ZTXsEuI6zjQWtWv9WV/S
+      ymElVv023Omb6ZaMS6Bgr70IlN9wYVY1UrueFEcI8237wIYMDYQ4sEBe3vdfg68M
+      Bf49rzF4IdlPyqhVkzcRV/cXPNzNC6WYFkxC59y8XGPvB41UfKYkPVrUCiawxuy4
+      MkiACPBzETIVj10RMkvYtSxFQUB5lIhF2Tw0D+eUn7MtLQzC6zLCTH4y3DX+0ngM
+      d9miSvg+sZvBwd4F0YZ9SUntsmOLVdrBXwZZm82+3+aZh/Q3l5TMMEBm5mcsPpV4
+      KRKWJ347kLYz0fy8PeqUdGaQtp1gCyhl3pSWPNUCAwEAAaOCAbEwggGtMAwGA1Ud
+      EwEB/wQCMAAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMA4GA1UdDwEB
+      /wQEAwIFoDA2BgNVHR8ELzAtMCugKaAnhiVodHRwOi8vY3JsLmdvZGFkZHkuY29t
+      L2dkaWcyczEtODcuY3JsMFMGA1UdIARMMEowSAYLYIZIAYb9bQEHFwEwOTA3Bggr
+      BgEFBQcCARYraHR0cDovL2NlcnRpZmljYXRlcy5nb2RhZGR5LmNvbS9yZXBvc2l0
+      b3J5LzB2BggrBgEFBQcBAQRqMGgwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmdv
+      ZGFkZHkuY29tLzBABggrBgEFBQcwAoY0aHR0cDovL2NlcnRpZmljYXRlcy5nb2Rh
+      ZGR5LmNvbS9yZXBvc2l0b3J5L2dkaWcyLmNydDAfBgNVHSMEGDAWgBRAwr0njsw0
+      gzCiM9f7bLPwtCyAzjApBgNVHREEIjAggg8qLmJsdWV5aWVsZC5jb22CDWJsdWV5
+      aWVsZC5jb20wHQYDVR0OBBYEFHnYviCbSr/U4Tm/ZlrLv3+K7ok8MA0GCSqGSIb3
+      DQEBCwUAA4IBAQAOz7ItHf6/Yx7rPRNB7K4oMdiEPhmuc+hYXpcIBtFjdktrRGrc
+      HluPDzuJSrQYKx6nwqu0tizQVOph0SLTglvUwp3mb9XTSqn/FXLenKsLFtXsmIry
+      UStRusqfISIMiD2r3jamm8d7J9EBO+tYAMMgGFf5qc5XiZj+k/w5BCttGkWvVWI4
+      qBiEdMAD67OqU8AnC7xtE+M+GWFHExhYJ0MfWDLu8AAlGdzlEOEqdxltTxiBNhsg
+      a8letXN/ZeZy+6nZe5dB5WNQb9b3JxuUI0gyo76rtF2Jcf8LgRBjOBQDMpZ1YUai
+      HNh4Oqs9pxu+7+8AdfzSCvI/oMLGGusHh5HL
+      -----END CERTIFICATE-----
+
+
+
+  /etc/pki/tls/certs/server.key:
+    mode: "000400"
+    owner: root
+    group: root
+    content: |
+      -----BEGIN PRIVATE KEY-----
+      MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDEcMv7pGUbcReH
+      9GwUMbvbRGCvfmU17BLiOs40FrVr/Vlf0sphJVb9Ntzpm+mWjEugYK+9CJTfcGFW
+      NVK7nhRHCPNt+8CGDA2EOLBAXt73X4OvDAX+Pa8xeCHZT8qoVZM3EVf3FzzczQul
+      mBZMQufcvFxj7weNVHymJD1a1AomsMbsuDJIgAjwcxEyFY9dETJL2LUsRUFAeZSI
+      Rdk8NA/nlJ+zLS0Mwusywkx+Mtw1/tJ4DHfZokr4PrGbwcHeBdGGfUlJ7bJji1Xa
+      wV8GWZvNvt/mmYf0N5eUzDBAZuZnLD6VeCkSlid+O5C2M9H8vD3qlHRmkLadYAso
+      Zd6UljzVAgMBAAECggEBALMufDHuMzeDwcYGQmttLgCEb3jEXwd/bX4jy6EhsZxu
+      PI62VFmmWKGh4IHJ8JidIgKJDuPrpvfkpzSecPen6rEczgbdYzAiYFXh64rbvp9/
+      5TrPScwtcdc60A1LxfwkCqNpU4aUELUK53vFrVkkkh/7RH73MjlM/mIBnmFyFkxQ
+      y1ZUZp1uf6FS4ciqXedqwVtKQFCmzk9QTeviO9jvymYUu5RYdff1PYJAEv2xgFSI
+      1r1GlrBMfL9vwJwcJ3njT4Vfb57n/eySo/12LomMlqLShuj126W3Vt/qP0OZ48Ns
+      zQfs/mG5s6zYMglv30+RkXnlL8WErpsAEfxZTajA70ECgYEA7kxqVsr5khmD1ctS
+      tRBzghWapgVQjaKP0kuLTJbyew+N0OW+WxMsCZHKd+6K16WIoBDupHf83kO4GEQX
+      0xMGP+LF4ZRvPGBIdNyT47SaKKQVnBV3ENyEey0tqjScQQUoAm4fMslsB3mSl0ZN
+      zuLpSjLXtkPK9MHiy6fxBiFMYnECgYEA0whk7Vg0C0qIUfwScrDbRDnF2B5zTs/d
+      et+zWg1TR4DncL4cMp+hrOa5/sC0jWwg9lmCgYti6fIKd82OXTymojsl4i9vEPu3
+      qsxUTmtJrGMhft2Lz4XDQNNpeexRu+ptTpYkh+PVRWW0ej3byn97KoSkASYSgsqO
+      0I8gd/MYaqUCgYEAmYqNHf1MjzF3e6K1WMsP0ep/qadU/t2Wk6ZvS9saw+YCt23A
+      mEgjIMtaTKpbtZUIEjK2wSw6ty+lB6WgQDVK2pEQdUfB4IIdTYbul1I/3h3Teq1t
+      +WRMzF0QxlF9uHtNCzvPSFb2D17q8COxcLNOI6vcx6iotcnTiutb5lpAMFECgYAE
+      vj6OexoIWu9/cDv16fWzrdy9g8mxrshal6aPUpdZlxMcnJlDpgTbPwBVMn2cZB7F
+      irN9N+XMPk1v7eXSQKe6I7wxPkGvzwiMxTTr4ktwnXXGRTJ8QpRl45qOS/p2T8mP
+      J57AkyVa/vM0gCltfroE9aA+Cl4GJIlbNKxVJdiZpQKBgQDEaBogoHXfZe06ghZ3
+      9GmYpUdESjOsHW9q7VqSpIAdNY2zlFfIBSOmvBap5bohSs59tqYh+JoK4IiR/xeh
+      tCY3odlGOJRe2OzhICnCETrjrOEiiOe8cX1lsVpGSupheKVku7ZFWMLgFaJCSBYA
+      +yK+izYrJ0wE7/FCt2/XXTAoEA==
+      -----END PRIVATE KEY-----
+
+  /etc/pki/tls/certs/gd_bundle.crt:
+    mode: "000400"
+    owner: root
+    group: root
+    content: |
+      -----BEGIN CERTIFICATE-----
+      MIIE0DCCA7igAwIBAgIBBzANBgkqhkiG9w0BAQsFADCBgzELMAkGA1UEBhMCVVMx
+      EDAOBgNVBAgTB0FyaXpvbmExEzARBgNVBAcTClNjb3R0c2RhbGUxGjAYBgNVBAoT
+      EUdvRGFkZHkuY29tLCBJbmMuMTEwLwYDVQQDEyhHbyBEYWRkeSBSb290IENlcnRp
+      ZmljYXRlIEF1dGhvcml0eSAtIEcyMB4XDTExMDUwMzA3MDAwMFoXDTMxMDUwMzA3
+      MDAwMFowgbQxCzAJBgNVBAYTAlVTMRAwDgYDVQQIEwdBcml6b25hMRMwEQYDVQQH
+      EwpTY290dHNkYWxlMRowGAYDVQQKExFHb0RhZGR5LmNvbSwgSW5jLjEtMCsGA1UE
+      CxMkaHR0cDovL2NlcnRzLmdvZGFkZHkuY29tL3JlcG9zaXRvcnkvMTMwMQYDVQQD
+      EypHbyBEYWRkeSBTZWN1cmUgQ2VydGlmaWNhdGUgQXV0aG9yaXR5IC0gRzIwggEi
+      MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC54MsQ1K92vdSTYuswZLiBCGzD
+      BNliF44v/z5lz4/OYuY8UhzaFkVLVat4a2ODYpDOD2lsmcgaFItMzEUz6ojcnqOv
+      K/6AYZ15V8TPLvQ/MDxdR/yaFrzDN5ZBUY4RS1T4KL7QjL7wMDge87Am+GZHY23e
+      cSZHjzhHU9FGHbTj3ADqRay9vHHZqm8A29vNMDp5T19MR/gd71vCxJ1gO7GyQ5HY
+      pDNO6rPWJ0+tJYqlxvTV0KaudAVkV4i1RFXULSo6Pvi4vekyCgKUZMQWOlDxSq7n
+      eTOvDCAHf+jfBDnCaQJsY1L6d8EbyHSHyLmTGFBUNUtpTrw700kuH9zB0lL7AgMB
+      AAGjggEaMIIBFjAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBBjAdBgNV
+      HQ4EFgQUQMK9J47MNIMwojPX+2yz8LQsgM4wHwYDVR0jBBgwFoAUOpqFBxBnKLbv
+      9r0FQW4gwZTaD94wNAYIKwYBBQUHAQEEKDAmMCQGCCsGAQUFBzABhhhodHRwOi8v
+      b2NzcC5nb2RhZGR5LmNvbS8wNQYDVR0fBC4wLDAqoCigJoYkaHR0cDovL2NybC5n
+      b2RhZGR5LmNvbS9nZHJvb3QtZzIuY3JsMEYGA1UdIAQ/MD0wOwYEVR0gADAzMDEG
+      CCsGAQUFBwIBFiVodHRwczovL2NlcnRzLmdvZGFkZHkuY29tL3JlcG9zaXRvcnkv
+      MA0GCSqGSIb3DQEBCwUAA4IBAQAIfmyTEMg4uJapkEv/oV9PBO9sPpyIBslQj6Zz
+      91cxG7685C/b+LrTW+C05+Z5Yg4MotdqY3MxtfWoSKQ7CC2iXZDXtHwlTxFWMMS2
+      RJ17LJ3lXubvDGGqv+QqG+6EnriDfcFDzkSnE3ANkR/0yBOtg2DZ2HKocyQetawi
+      DsoXiWJYRBuriSUBAA/NxBti21G00w9RKpv0vHP8ds42pM3Z2Czqrpv1KrKQ0U11
+      GIo/ikGQI31bS/6kA1ibRrLDYGCD+H1QQc7CoZDDu+8CL9IVVO5EFdkKrqeKM+2x
+      LXY2JtwE65/3YR8V3Idv7kaWKK2hJn0KCacuBKONvPi8BDAB
+      -----END CERTIFICATE-----
+      -----BEGIN CERTIFICATE-----
+      MIIEfTCCA2WgAwIBAgIDG+cVMA0GCSqGSIb3DQEBCwUAMGMxCzAJBgNVBAYTAlVT
+      MSEwHwYDVQQKExhUaGUgR28gRGFkZHkgR3JvdXAsIEluYy4xMTAvBgNVBAsTKEdv
+      IERhZGR5IENsYXNzIDIgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkwHhcNMTQwMTAx
+      MDcwMDAwWhcNMzEwNTMwMDcwMDAwWjCBgzELMAkGA1UEBhMCVVMxEDAOBgNVBAgT
+      B0FyaXpvbmExEzARBgNVBAcTClNjb3R0c2RhbGUxGjAYBgNVBAoTEUdvRGFkZHku
+      Y29tLCBJbmMuMTEwLwYDVQQDEyhHbyBEYWRkeSBSb290IENlcnRpZmljYXRlIEF1
+      dGhvcml0eSAtIEcyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv3Fi
+      CPH6WTT3G8kYo/eASVjpIoMTpsUgQwE7hPHmhUmfJ+r2hBtOoLTbcJjHMgGxBT4H
+      Tu70+k8vWTAi56sZVmvigAf88xZ1gDlRe+X5NbZ0TqmNghPktj+pA4P6or6KFWp/
+      3gvDthkUBcrqw6gElDtGfDIN8wBmIsiNaW02jBEYt9OyHGC0OPoCjM7T3UYH3go+
+      6118yHz7sCtTpJJiaVElBWEaRIGMLKlDliPfrDqBmg4pxRyp6V0etp6eMAo5zvGI
+      gPtLXcwy7IViQyU0AlYnAZG0O3AqP26x6JyIAX2f1PnbU21gnb8s51iruF9G/M7E
+      GwM8CetJMVxpRrPgRwIDAQABo4IBFzCCARMwDwYDVR0TAQH/BAUwAwEB/zAOBgNV
+      HQ8BAf8EBAMCAQYwHQYDVR0OBBYEFDqahQcQZyi27/a9BUFuIMGU2g/eMB8GA1Ud
+      IwQYMBaAFNLEsNKR1EwRcbNhyz2h/t2oatTjMDQGCCsGAQUFBwEBBCgwJjAkBggr
+      BgEFBQcwAYYYaHR0cDovL29jc3AuZ29kYWRkeS5jb20vMDIGA1UdHwQrMCkwJ6Al
+      oCOGIWh0dHA6Ly9jcmwuZ29kYWRkeS5jb20vZ2Ryb290LmNybDBGBgNVHSAEPzA9
+      MDsGBFUdIAAwMzAxBggrBgEFBQcCARYlaHR0cHM6Ly9jZXJ0cy5nb2RhZGR5LmNv
+      bS9yZXBvc2l0b3J5LzANBgkqhkiG9w0BAQsFAAOCAQEAWQtTvZKGEacke+1bMc8d
+      H2xwxbhuvk679r6XUOEwf7ooXGKUwuN+M/f7QnaF25UcjCJYdQkMiGVnOQoWCcWg
+      OJekxSOTP7QYpgEGRJHjp2kntFolfzq3Ms3dhP8qOCkzpN1nsoX+oYggHFCJyNwq
+      9kIDN0zmiN/VryTyscPfzLXs4Jlet0lUIDyUGAzHHFIYSaRt4bNYC8nY7NmuHDKO
+      KHAN4v6mF56ED71XcLNa6R+ghlO773z/aQvgSMO3kwvIClTErF0UZzdsyqUvMQg3
+      qm5vjLyb4lddJIGvl5echK1srDdMZvNhkREg5L4wn3qkKQmw4TRfZHcYQFHfjDCm
+      rw==
+      -----END CERTIFICATE-----
+
+container_commands:
+  00_copy_ssl_conf:
+    command: /bin/cp -vf /tmp/ssl.conf /etc/httpd/conf.d/
+  01_killhttpd:
+    command: "killall httpd"
+    ignoreErrors: true
+  02_wait:
+    command: "sleep 3"
+
+services:
+  sysvinit:
+    httpd:
+      enabled: true
+      ensureRunning: true
+      files : [/etc/httpd/conf.d/ssl.conf,/etc/pki/tls/certs/server.key,/etc/pki/tls/certs/server.crt,/etc/pki/tls/certs/gd_bundle.crt]

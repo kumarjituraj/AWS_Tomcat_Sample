@@ -1,0 +1,55 @@
+Resources:
+  AWSEBSecurityGroupSSL:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: { "Fn::GetAtt" : [ "AWSEBSecurityGroup", "GroupId" ]}
+      SourceSecurityGroupOwnerId: { "Fn::GetAtt" : [ "AWSEBLoadBalancer", "SourceSecurityGroup.OwnerAlias" ]}
+      SourceSecurityGroupId: { "Fn::GetAtt" : [ "AWSEBLoadBalancerSecurityGroup", "GroupId" ]}
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+  mysecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: { "Fn::GetAtt" : [ "AWSEBSecurityGroup", "GroupId" ]}
+      IpProtocol: tcp
+      ToPort: 8080
+      FromPort: 8080
+      SourceSecurityGroupOwnerId: { "Fn::GetAtt" : [ "AWSEBLoadBalancer", "SourceSecurityGroup.OwnerAlias" ]}
+      SourceSecurityGroupId: { "Fn::GetAtt" : [ "AWSEBLoadBalancerSecurityGroup", "GroupId" ]}
+  SecurityGroupIngressELB:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: { "Fn::GetAtt" : [ "AWSEBLoadBalancerSecurityGroup", "GroupId" ]}
+      CidrIp: 0.0.0.0/0
+      IpProtocol: tcp
+      ToPort: 443
+      FromPort: 443
+  SecurityGroupEgressELB:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: { "Fn::GetAtt" : [ "AWSEBLoadBalancerSecurityGroup", "GroupId" ]}
+      DestinationSecurityGroupId: { "Fn::GetAtt" : [ "AWSEBSecurityGroup", "GroupId" ]}
+      IpProtocol: tcp
+      ToPort: 8080
+      FromPort: 8080
+  AWSEBLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Listeners:
+        - {LoadBalancerPort: 80, InstancePort: 8080, Protocol: "HTTP", InstanceProtocol: "HTTP"}
+       
+files:
+  /etc/httpd/conf.d/ssl.conf:
+    mode: 000644
+    owner: root
+    group: root
+    content: |
+        Listen 8080
+        <VirtualHost *:8080>
+            DocumentRoot /var/www/html
+            ServerName example.com
+            ServerAlias www.example.com
+            RedirectMatch ^/(.*) https://www.example.com/$1
+            # Other directives here
+        </VirtualHost>
